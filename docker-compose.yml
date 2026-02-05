@@ -1,0 +1,298 @@
+version: "3.8"
+
+services:
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    hostname: kafka
+    container_name: kafka
+    ports:
+      - "9092:9092"
+      - "9093:9093"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://kafka:9092,CONTROLLER://kafka:9093,PLAINTEXT_HOST://0.0.0.0:29092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    networks:
+      - app-network
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    hostname: kafka-ui
+    container_name: kafka-ui
+    ports:
+      - "8090:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local-kafka
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+    depends_on:
+      - kafka
+    networks:
+      - app-network
+
+  kafka-init:
+    image: confluentinc/cp-kafka:7.4.0
+    depends_on:
+      - kafka
+    volumes:
+      - ./init-kafka-topics.sh:/init-kafka-topics.sh
+    entrypoint: ["/bin/bash", "/init-kafka-topics.sh"]
+    networks:
+      - app-network
+
+  booking-db:
+    image: mysql:8.0
+    hostname: booking-db
+    container_name: booking-db
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: booking_service_db
+    volumes:
+      - booking-db-data:/var/lib/mysql
+      - ./setup_databases.sql:/docker-entrypoint-initdb.d/setup_databases.sql
+    networks:
+      - app-network
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "localhost",
+          "-u",
+          "root",
+          "-p$$MYSQL_ROOT_PASSWORD",
+        ]
+      timeout: 20s
+      retries: 10
+      start_period: 30s
+
+  payment-db:
+    image: mysql:8.0
+    hostname: payment-db
+    container_name: payment-db
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: payment_service_db
+    volumes:
+      - payment-db-data:/var/lib/mysql
+      - ./setup_databases.sql:/docker-entrypoint-initdb.d/setup_databases.sql
+    networks:
+      - app-network
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "localhost",
+          "-u",
+          "root",
+          "-p$$MYSQL_ROOT_PASSWORD",
+        ]
+      timeout: 20s
+      retries: 10
+      start_period: 30s
+
+  identity-db:
+    image: mysql:8.0
+    hostname: identity-db
+    container_name: identity-db
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: identity_service_db
+    volumes:
+      - identity-db-data:/var/lib/mysql
+      - ./setup_databases.sql:/docker-entrypoint-initdb.d/setup_databases.sql
+    networks:
+      - app-network
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "localhost",
+          "-u",
+          "root",
+          "-p$$MYSQL_ROOT_PASSWORD",
+        ]
+      timeout: 20s
+      retries: 10
+      start_period: 30s
+
+  notification-db:
+    image: mysql:8.0
+    hostname: notification-db
+    container_name: notification-db
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: notification_service_db
+    volumes:
+      - notification-db-data:/var/lib/mysql
+      - ./setup_databases.sql:/docker-entrypoint-initdb.d/setup_databases.sql
+    networks:
+      - app-network
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "localhost",
+          "-u",
+          "root",
+          "-p$$MYSQL_ROOT_PASSWORD",
+        ]
+      timeout: 20s
+      retries: 10
+      start_period: 30s
+
+  payment-service:
+    build:
+      context: ./payment-service
+      dockerfile: Dockerfile
+    hostname: payment-service
+    container_name: payment-service
+    ports:
+      - "8082:8082"
+    environment:
+      DB_HOST: payment-db
+      DB_PORT: "3306"
+      DB_NAME: payment_service_db
+      DB_USER: payment_user
+      DB_PASSWORD: payment_password
+      KAFKA_BROKER: kafka:9092
+      # PayHere sandbox credentials
+      PAYHERE_MERCHANT_ID: "1225830"
+      PAYHERE_MERCHANT_SECRET: "NDEzMjI0OTEyNTI1OTM0OTAyMjkxMjM3OTUyMjYzNjIyMDU2MjQ0"
+      PAYHERE_SANDBOX: "true"
+      # Set to your public gateway URL for PayHere notify callbacks.
+      # For local sandbox testing: run `ngrok http 8080` and set to:
+      #   https://<ngrok-id>.ngrok.io/payments/payhere/notify
+      PAYHERE_NOTIFY_URL: "https://1dc7-203-94-92-134.ngrok-free.app/payments/payhere/notify"
+    depends_on:
+      payment-db:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    networks:
+      - app-network
+
+  identity-service:
+    build:
+      context: ./identity-service
+      dockerfile: Dockerfile
+    hostname: identity-service
+    container_name: identity-service
+    ports:
+      - "8081:8081"
+    environment:
+      DB_HOST: identity-db
+      DB_PORT: "3306"
+      DB_NAME: identity_service_db
+      DB_USER: identity_user
+      DB_PASSWORD: identity_password
+    depends_on:
+      identity-db:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  notification-service:
+    build:
+      context: ./notification-service
+      dockerfile: Dockerfile
+    hostname: notification-service
+    container_name: notification-service
+    ports:
+      - "8083:8083"
+    environment:
+      DB_HOST: notification-db
+      DB_PORT: "3306"
+      DB_NAME: notification_service_db
+      DB_USER: notification_user
+      DB_PASSWORD: notification_password
+      KAFKA_BROKER: kafka:9092
+    depends_on:
+      notification-db:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    networks:
+      - app-network
+
+  booking-service:
+    build:
+      context: ./booking-service
+      dockerfile: Dockerfile
+    hostname: booking-service
+    container_name: booking-service
+    ports:
+      - "8084:8084"
+    environment:
+      DB_USER: booking_user
+      DB_PASSWORD: booking_password
+    depends_on:
+      booking-db:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    networks:
+      - app-network
+
+  gateway:
+    build:
+      context: ./gateway
+      dockerfile: Dockerfile
+    hostname: gateway
+    container_name: gateway
+    ports:
+      - "8080:8080"
+    depends_on:
+      - booking-service
+      - payment-service
+      - identity-service
+      - notification-service
+    networks:
+      - app-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    hostname: frontend
+    container_name: frontend
+    ports:
+      - "3000:3000"
+    environment:
+      GATEWAY_URL: http://gateway:8080
+    depends_on:
+      - gateway
+    networks:
+      - app-network
+
+volumes:
+  kafka-data:
+  booking-db-data:
+  payment-db-data:
+  identity-db-data:
+  notification-db-data:
+
+networks:
+  app-network:
+    driver: bridge
