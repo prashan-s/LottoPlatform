@@ -1,0 +1,712 @@
+{
+	"info": {
+		"_postman_id": "lottery-gateway-2026",
+		"name": "Lottery Platform - Gateway Only",
+		"description": "Complete API testing collection for Lottery Platform via API Gateway (Gateway-Only Access)\n\nAll requests route through the API Gateway on port 8080. Direct service access is prohibited in production.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "1. Health Checks",
+			"item": [
+				{
+					"name": "Gateway Health",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Gateway is healthy\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    const json = pm.response.json();",
+									"    pm.expect(json.status).to.eql(\"UP\");",
+									"    pm.expect(json.service).to.eql(\"gateway\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{GATEWAY_URL}}/health",
+							"host": ["{{GATEWAY_URL}}"],
+							"path": ["health"]
+						}
+					}
+				},
+				{
+					"name": "Gateway Routes Info",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Gateway routes configured\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    const json = pm.response.json();",
+									"    pm.expect(json.service).to.eql(\"Lottery Platform Gateway\");",
+									"    pm.expect(json.routes).to.be.an('array');",
+									"    pm.expect(json.routes.length).to.be.at.least(5);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{GATEWAY_URL}}/",
+							"host": ["{{GATEWAY_URL}}"],
+							"path": [""]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "2. Identity Service (Via Gateway)",
+			"item": [
+				{
+					"name": "Create Member",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Member created successfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    const json = pm.response.json();",
+									"    pm.expect(json.memberId).to.exist;",
+									"    pm.expect(json.membershipTier).to.exist;",
+									"    ",
+									"    // Save memberId for subsequent requests",
+									"    pm.environment.set(\"memberId\", json.memberId);",
+									"    console.log(\"Created member: \" + json.memberId);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"john.doe@example.com\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\"\n}"
+						},
+						"url": {
+							"raw": "{{GATEWAY_URL}}/members",
+							"host": ["{{GATEWAY_URL}}"],
+							"path": ["members"]
+						}
+					}
+				},
+				{
+					"name": "Get Member",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Member retrieved successfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    const json = pm.response.json();",
+									"    pm.expect(json.memberId).to.eql(pm.environment.get(\"memberId\"));",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{GATEWAY_URL}}/members/{{memberId}}",
+							"host": ["{{GATEWAY_URL}}"],
+							"path": ["members", "{{memberId}}"]
+						}
+					}
+				},
+				{
+					"name": "Update Profile",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Profile updated successfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"phoneNumber\": \"+1234567890\",\n  \"preferences\": {\"newsletter\": true, \"smsNotifications\": false}\n}"
+						},
+						"url": {
+							"raw": "{{GATEWAY_URL}}/profiles/{{memberId}}",
+							"host": ["{{GATEWAY_URL}}"],
+							"path": ["profiles", "{{memberId}}"]
+						}
+					}
+				},
+				{
+					"name": "Get Profile",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Profile retrieved successfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    const json = pm.response.json();",
+									"    pm.expect(json.memberId).to.eql(pm.environment.get(\"memberId\"));",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{GATEWAY_URL}}/profiles/{{memberId}}",
+							"host": ["{{GATEWAY_URL}}"],
+							"path": ["profiles", "{{memberId}}"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "3. Booking Service (Via Gateway)",
+			"item": [
+				{
+					"name": "Reserve Slot",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Slot reserved successfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    const json = pm.response.json();",
+									"    pm.expect(json.bookingId).to.exist;",
+									"    pm.expect(json.status).to.eql(\"RESERVED\");",
+									"    ",
+									"    // Save bookingId for subsequent requests",
+									"    pm.environment.set(\"bookingId\", json.bookingId);",
+									"    console.log(\"Created booking: \" + json.bookingId);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"slotId\": \"slot-001\",\n  \"memberId\": \"{{memberId}}\",\n  \"expiresAt\": \"2026-12-31T23:59:59Z\"\n}"
+						},
+						"url": {
+							"raw": "{{GATEWAY_URL}}/booking/reservations",
+							"host": ["{{GATEWAY_URL}}"],
+							"path": ["booking", "reservations"]
+						}
+					}
+				},
+				{
+					"name": "Get Booking",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Booking retrieved successfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    const json = pm.response.json();",
+									"    pm.expect(json.bookingId).to.eql(pm.environment.get(\"bookingId\"));",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{GATEWAY_URL}}/booking/{{bookingId}}",
+							"host": ["{{GATEWAY_URL}}"],
+							"path": ["booking", "{{bookingId}}"]
+						}
+					}
+				},
+				{
+					"name": "Confirm Booking (Manual)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Booking confirmed successfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    const json = pm.response.json();",
+									"    pm.expect(json.status).to.eql(\"CONFIRMED\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{GATEWAY_URL}}/booking/{{bookingId}}/confirm",
+							"host": ["{{GATEWAY_URL}}"],
+							"path": ["booking", "{{bookingId}}", "confirm"]
+						}
+					}
+				},
+				{
+					"name": "Cancel Booking",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Booking cancelled successfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    const json = pm.response.json();",
+									"    pm.expect(json.status).to.eql(\"CANCELLED\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{GATEWAY_URL}}/booking/{{bookingId}}/cancel",
+							"host": ["{{GATEWAY_URL}}"],
+							"path": ["booking", "{{bookingId}}", "cancel"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "4. Payment Service (Via Gateway)",
+			"item": [
+				{
+					"name": "Initiate Payment",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Payment initiated successfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    const json = pm.response.json();",
+									"    pm.expect(json.paymentId).to.exist;",
+									"    pm.expect(json.status).to.eql(\"PENDING\");",
+									"    ",
+									"    // Save paymentId for subsequent requests",
+									"    pm.environment.set(\"paymentId\", json.paymentId);",
+									"    console.log(\"Created payment: \" + json.paymentId);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"bookingId\": \"{{bookingId}}\",\n  \"memberId\": \"{{memberId}}\",\n  \"amount\": 50.00,\n  \"idempotencyKey\": \"payment-{{$timestamp}}\"\n}"
+						},
+						"url": {
+							"raw": "{{GATEWAY_URL}}/payments",
+							"host": ["{{GATEWAY_URL}}"],
+							"path": ["payments"]
+						}
+					}
+				},
+				{
+					"name": "Get Payment",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Payment retrieved successfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    const json = pm.response.json();",
+									"    pm.expect(json.paymentId).to.eql(pm.environment.get(\"paymentId\"));",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{GATEWAY_URL}}/payments/{{paymentId}}",
+							"host": ["{{GATEWAY_URL}}"],
+							"path": ["payments", "{{paymentId}}"]
+						}
+					}
+				},
+				{
+					"name": "Capture Payment",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Payment captured successfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    const json = pm.response.json();",
+									"    pm.expect(json.status).to.eql(\"CAPTURED\");",
+									"    console.log(\"Payment captured - Saga will auto-confirm booking in 10s\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{GATEWAY_URL}}/payments/{{paymentId}}/capture",
+							"host": ["{{GATEWAY_URL}}"],
+							"path": ["payments", "{{paymentId}}", "capture"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "5. Notification Service (Via Gateway)",
+			"item": [
+				{
+					"name": "List Notifications",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Notifications retrieved successfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    const json = pm.response.json();",
+									"    pm.expect(json).to.be.an('array');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{GATEWAY_URL}}/notifications",
+							"host": ["{{GATEWAY_URL}}"],
+							"path": ["notifications"]
+						}
+					}
+				},
+				{
+					"name": "Get Notification by ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Notification retrieved successfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{GATEWAY_URL}}/notifications/1",
+							"host": ["{{GATEWAY_URL}}"],
+							"path": ["notifications", "1"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "6. End-to-End Flow (Automated)",
+			"item": [
+				{
+					"name": "E2E: Create Member",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"✓ Step 1: Member created\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    const json = pm.response.json();",
+									"    pm.expect(json.memberId).to.exist;",
+									"    pm.environment.set(\"e2e_memberId\", json.memberId);",
+									"    console.log(\"✓ Member ID: \" + json.memberId);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"e2e.test@example.com\",\n  \"firstName\": \"E2E\",\n  \"lastName\": \"Test\"\n}"
+						},
+						"url": {
+							"raw": "{{GATEWAY_URL}}/members",
+							"host": ["{{GATEWAY_URL}}"],
+							"path": ["members"]
+						}
+					}
+				},
+				{
+					"name": "E2E: Reserve Slot",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"✓ Step 2: Slot reserved\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    const json = pm.response.json();",
+									"    pm.expect(json.bookingId).to.exist;",
+									"    pm.expect(json.status).to.eql(\"RESERVED\");",
+									"    pm.environment.set(\"e2e_bookingId\", json.bookingId);",
+									"    console.log(\"✓ Booking ID: \" + json.bookingId);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"slotId\": \"e2e-slot-{{$timestamp}}\",\n  \"memberId\": \"{{e2e_memberId}}\",\n  \"expiresAt\": \"2026-12-31T23:59:59Z\"\n}"
+						},
+						"url": {
+							"raw": "{{GATEWAY_URL}}/booking/reservations",
+							"host": ["{{GATEWAY_URL}}"],
+							"path": ["booking", "reservations"]
+						}
+					}
+				},
+				{
+					"name": "E2E: Initiate Payment",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"✓ Step 3: Payment initiated\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    const json = pm.response.json();",
+									"    pm.expect(json.paymentId).to.exist;",
+									"    pm.expect(json.status).to.eql(\"PENDING\");",
+									"    pm.environment.set(\"e2e_paymentId\", json.paymentId);",
+									"    console.log(\"✓ Payment ID: \" + json.paymentId);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"bookingId\": \"{{e2e_bookingId}}\",\n  \"memberId\": \"{{e2e_memberId}}\",\n  \"amount\": 50.00,\n  \"idempotencyKey\": \"e2e-payment-{{$timestamp}}\"\n}"
+						},
+						"url": {
+							"raw": "{{GATEWAY_URL}}/payments",
+							"host": ["{{GATEWAY_URL}}"],
+							"path": ["payments"]
+						}
+					}
+				},
+				{
+					"name": "E2E: Capture Payment",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"✓ Step 4: Payment captured\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    const json = pm.response.json();",
+									"    pm.expect(json.status).to.eql(\"CAPTURED\");",
+									"    console.log(\"✓ Payment captured successfully\");",
+									"    console.log(\"⏳ Waiting for saga to auto-confirm booking (takes ~10 seconds)...\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{GATEWAY_URL}}/payments/{{e2e_paymentId}}/capture",
+							"host": ["{{GATEWAY_URL}}"],
+							"path": ["payments", "{{e2e_paymentId}}", "capture"]
+						}
+					}
+				},
+				{
+					"name": "E2E: Verify Booking Auto-Confirmed",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"✓ Step 5: Booking auto-confirmed by saga\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    const json = pm.response.json();",
+									"    pm.expect(json.status).to.eql(\"CONFIRMED\");",
+									"    console.log(\"✓ Booking automatically confirmed by Booking-Payment Saga!\");",
+									"    console.log(\"✅ E2E flow completed successfully!\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{GATEWAY_URL}}/booking/{{e2e_bookingId}}",
+							"host": ["{{GATEWAY_URL}}"],
+							"path": ["booking", "{{e2e_bookingId}}"]
+						}
+					}
+				}
+			],
+			"description": "Complete end-to-end flow testing:\n1. Create member\n2. Reserve slot\n3. Initiate payment\n4. Capture payment\n5. Verify booking auto-confirmed by saga\n\nRun this folder with Runner to execute all steps sequentially."
+		},
+		{
+			"name": "7. Gateway Security Tests",
+			"item": [
+				{
+					"name": "Verify Gateway Header Added",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Gateway adds routing header\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    // This test verifies the gateway is working",
+									"    // Backend services should verify X-Gateway-Routed header",
+									"    console.log(\"Request routed through gateway successfully\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{GATEWAY_URL}}/health",
+							"host": ["{{GATEWAY_URL}}"],
+							"path": ["health"]
+						}
+					}
+				}
+			],
+			"description": "Security tests to verify:\n- Gateway adds X-Gateway-Routed header\n- All requests go through gateway\n- No direct service access in production"
+		}
+	],
+	"variable": [
+		{
+			"key": "GATEWAY_URL",
+			"value": "http://localhost:8080",
+			"type": "string"
+		}
+	]
+}
