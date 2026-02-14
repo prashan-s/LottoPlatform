@@ -1,0 +1,195 @@
+
+openapi: 3.0.0
+info:
+  title: Membership and Profile Service API
+  description: API for managing user membership and profile data.
+  version: 1.0.0
+servers:
+  - url: http://localhost:8083/members/v1
+    description: Local Membership Service
+  - url: http://localhost:8083/profiles/v1
+    description: Local Profile Service
+paths:
+  /members:
+    post:
+      summary: Create a new member
+      description: Registers a new member in the system.
+      operationId: createMember
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMemberRequest'
+      responses:
+        '201':
+          description: Member successfully created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemberResponse'
+        '400':
+          description: Invalid request payload.
+        '409':
+          description: Member with provided email already exists.
+  /members/{memberId}:
+    get:
+      summary: Get member details by ID
+      description: Retrieves the details of a specific member.
+      operationId: getMemberById
+      parameters:
+        - in: path
+          name: memberId
+          schema:
+            type: string
+            format: uuid
+          required: true
+          description: Unique identifier of the member.
+      responses:
+        '200':
+          description: Member details retrieved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemberResponse'
+        '404':
+          description: Member not found.
+  /profiles/{memberId}:
+    get:
+      summary: Get member profile by ID
+      description: Retrieves the profile details for a specific member.
+      operationId: getProfileById
+      parameters:
+        - in: path
+          name: memberId
+          schema:
+            type: string
+            format: uuid
+          required: true
+          description: Unique identifier of the member.
+      responses:
+        '200':
+          description: Member profile retrieved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileResponse'
+        '404':
+          description: Profile not found.
+    put:
+      summary: Update member profile
+      description: Updates the profile details for a specific member.
+      operationId: updateProfile
+      parameters:
+        - in: path
+          name: memberId
+          schema:
+            type: string
+            format: uuid
+          required: true
+          description: Unique identifier of the member.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProfileRequest'
+      responses:
+        '200':
+          description: Profile updated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileResponse'
+        '400':
+          description: Invalid request payload.
+        '404':
+          description: Profile not found.
+components:
+  schemas:
+    CreateMemberRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          description: Member's email address (must be unique).
+        password:
+          type: string
+          format: password
+          description: Member's password.
+        firstName:
+          type: string
+          description: Member's first name.
+        lastName:
+          type: string
+          description: Member's last name.
+    UpdateProfileRequest:
+      type: object
+      properties:
+        firstName:
+          type: string
+          description: Member's updated first name.
+        lastName:
+          type: string
+          description: Member's updated last name.
+        address:
+          type: string
+          description: Member's updated address.
+        phoneNumber:
+          type: string
+          description: Member's updated phone number.
+        preferences:
+          type: object
+          additionalProperties: true
+          description: JSON object for user preferences.
+    MemberResponse:
+      type: object
+      properties:
+        memberId:
+          type: string
+          format: uuid
+          description: Unique identifier for the member.
+        email:
+          type: string
+          format: email
+          description: Member's email address.
+        tier:
+          type: string
+          enum: [BRONZE, SILVER, GOLD, PLATINUM]
+          default: BRONZE
+          description: Membership tier.
+        createdAt:
+          type: string
+          format: date-time
+          description: Timestamp when the member was created.
+    ProfileResponse:
+      type: object
+      properties:
+        memberId:
+          type: string
+          format: uuid
+          description: Unique identifier for the member.
+        firstName:
+          type: string
+          description: Member's first name.
+        lastName:
+          type: string
+          description: Member's last name.
+        address:
+          type: string
+          description: Member's address.
+        phoneNumber:
+          type: string
+          description: Member's phone number.
+        preferences:
+          type: object
+          additionalProperties: true
+          description: JSON object for user preferences.
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp for the profile.
