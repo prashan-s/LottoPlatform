@@ -1,0 +1,16 @@
+FROM eclipse-temurin:17-jre
+
+# Create non-root user
+RUN groupadd -g 1001 appgroup && useradd -u 1001 -g appgroup -m appuser
+
+WORKDIR /app
+
+# Copy the pre-built jar
+COPY target/*.jar app.jar
+
+# Switch to non-root user
+USER appuser
+
+EXPOSE 8084
+
+ENTRYPOINT ["java", "-jar", "app.jar"]
