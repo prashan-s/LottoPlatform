@@ -1,0 +1,77 @@
+
+openapi: 3.0.0
+info:
+  title: Booking Service API
+  description: API for managing lottery slot bookings.
+  version: 1.0.0
+servers:
+  - url: http://localhost:8081/booking/v1
+    description: Local Booking Service
+paths:
+  /reservations:
+    post:
+      summary: Reserve a lottery slot
+      description: Allows a member to reserve a slot for a lottery.
+      operationId: reserveSlot
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReserveSlotRequest'
+      responses:
+        '200':
+          description: Slot successfully reserved.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingResponse'
+        '400':
+          description: Invalid request payload.
+        '409':
+          description: Slot already reserved or unavailable.
+components:
+  schemas:
+    ReserveSlotRequest:
+      type: object
+      required:
+        - slotId
+        - memberId
+        - expirationMinutes
+      properties:
+        slotId:
+          type: string
+          format: uuid
+          description: Unique identifier for the slot to be reserved.
+        memberId:
+          type: string
+          format: uuid
+          description: Unique identifier for the member making the reservation.
+        expirationMinutes:
+          type: integer
+          format: int32
+          description: Duration in minutes until the reservation expires if not confirmed.
+          minimum: 1
+    BookingResponse:
+      type: object
+      properties:
+        bookingId:
+          type: string
+          format: uuid
+          description: Unique identifier for the created booking.
+        slotId:
+          type: string
+          format: uuid
+          description: Unique identifier for the reserved slot.
+        memberId:
+          type: string
+          format: uuid
+          description: Unique identifier for the member.
+        status:
+          type: string
+          enum: [RESERVED, CONFIRMED, CANCELLED]
+          description: Current status of the booking.
+        expiresAt:
+          type: string
+          format: date-time
+          description: Timestamp when the reservation expires.
