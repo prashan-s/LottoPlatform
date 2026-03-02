@@ -1,0 +1,9 @@
+CREATE TABLE outbox (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    event_id VARCHAR(36) NOT NULL,
+    event_type VARCHAR(255) NOT NULL,
+    aggregate_id VARCHAR(36) NOT NULL,
+    payload TEXT,
+    status VARCHAR(50) NOT NULL DEFAULT 'PENDING',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

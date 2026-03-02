@@ -1,0 +1,258 @@
+openapi: 3.0.0
+info:
+  title: Payment Service API
+  description: API for managing lottery payments.
+  version: 1.0.0
+servers:
+  - url: http://localhost:8082
+    description: Local Payment Service
+paths:
+  /payments:
+    post:
+      tags: [Payments]
+      summary: Initiate a payment
+      description: Initiates a payment for a booking. Idempotent — same idempotencyKey returns the existing payment.
+      operationId: initiatePayment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InitiatePaymentRequest'
+      responses:
+        '200':
+          description: Payment initiated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentResponse'
+        '400':
+          description: Invalid request payload.
+        '409':
+          description: Payment already exists for this idempotency key with a different amount/member.
+  /payments/{paymentId}/capture:
+    post:
+      tags: [Payments]
+      summary: Capture an initiated payment
+      description: Captures a payment that is in INITIATED state, marking it as CAPTURED and confirming the booking.
+      operationId: capturePayment
+      parameters:
+        - in: path
+          name: paymentId
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Unique identifier of the payment to capture.
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CapturePaymentRequest'
+      responses:
+        '200':
+          description: Payment captured successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentResponse'
+        '400':
+          description: Invalid request or payment not in capturable state.
+        '404':
+          description: Payment not found.
+  /payments/payhere/initiate:
+    post:
+      tags: [PayHere]
+      summary: Initiate a PayHere sandbox payment
+      description: |
+        Creates a payment record and returns all parameters (including the server-side hash)
+        needed to call payhere.startPayment() from the frontend JS SDK.
+        Uses recurring mode with preapproval — no immediate charge on first call.
+      operationId: initiatePayherePayment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PayhereInitiateRequest'
+      responses:
+        '200':
+          description: PayHere params returned successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayhereParams'
+        '400':
+          description: Invalid request.
+        '500':
+          description: Failed to create payment or compute hash.
+  /payments/payhere/notify:
+    post:
+      tags: [PayHere]
+      summary: PayHere webhook callback
+      description: |
+        Server-to-server callback from PayHere. Verifies the md5sig, then updates the
+        payment status based on status_code / message_type. Always responds HTTP 200
+        to prevent PayHere retries. Must be a publicly accessible URL.
+      operationId: handlePayhereNotify
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                merchant_id:
+                  type: string
+                order_id:
+                  type: string
+                payment_id:
+                  type: string
+                payhere_amount:
+                  type: string
+                payhere_currency:
+                  type: string
+                status_code:
+                  type: string
+                  description: "2=success, 0=pending, -1=cancelled, -2=failed, -3=chargedback"
+                md5sig:
+                  type: string
+                subscription_id:
+                  type: string
+                message_type:
+                  type: string
+                  description: "AUTHORIZATION_SUCCESS | AUTHORIZATION_FAILED | RECURRING_INSTALLMENT_SUCCESS | RECURRING_INSTALLMENT_FAILED | RECURRING_COMPLETE | RECURRING_STOPPED"
+      responses:
+        '200':
+          description: Always returns 200 (PayHere requirement).
+components:
+  schemas:
+    InitiatePaymentRequest:
+      type: object
+      required: [bookingId, memberId, amount, currency, idempotencyKey]
+      properties:
+        bookingId:
+          type: string
+          format: uuid
+          description: Associated booking ID.
+        memberId:
+          type: string
+          format: uuid
+          description: Member making the payment.
+        amount:
+          type: number
+          format: float
+          minimum: 0.01
+          description: Payment amount.
+        currency:
+          type: string
+          description: Currency code (e.g. LKR, USD).
+        idempotencyKey:
+          type: string
+          format: uuid
+          description: Unique key to prevent duplicate payments.
+    PayhereInitiateRequest:
+      type: object
+      required: [bookingId, memberId, amount, idempotencyKey]
+      properties:
+        bookingId:
+          type: string
+        memberId:
+          type: string
+        amount:
+          type: number
+          minimum: 0.01
+        currency:
+          type: string
+          default: LKR
+        idempotencyKey:
+          type: string
+        description:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+    PayhereParams:
+      type: object
+      properties:
+        paymentId:
+          type: string
+        sandbox:
+          type: boolean
+        merchant_id:
+          type: string
+        notify_url:
+          type: string
+        order_id:
+          type: string
+        items:
+          type: string
+        amount:
+          type: string
+        currency:
+          type: string
+        hash:
+          type: string
+        first_name:
+          type: string
+        last_name:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        address:
+          type: string
+        city:
+          type: string
+        country:
+          type: string
+        recurrence:
+          type: string
+          example: "1 Month"
+        duration:
+          type: string
+          example: "Forever"
+        preapprove:
+          type: string
+          example: "true"
+        payments:
+          type: boolean
+    CapturePaymentRequest:
+      type: object
+      properties:
+        gatewayTransactionId:
+          type: string
+          description: Transaction ID from the external payment gateway.
+    PaymentResponse:
+      type: object
+      properties:
+        paymentId:
+          type: string
+          format: uuid
+        bookingId:
+          type: string
+          format: uuid
+        memberId:
+          type: string
+          format: uuid
+        amount:
+          type: number
+          format: float
+        currency:
+          type: string
+        status:
+          type: string
+          enum: [INITIATED, AUTHORIZED, CAPTURED, FAILED, REFUNDED]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time

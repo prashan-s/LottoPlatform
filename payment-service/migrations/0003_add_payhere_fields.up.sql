@@ -1,0 +1,4 @@
+ALTER TABLE payments
+    ADD COLUMN currency VARCHAR(10) NOT NULL DEFAULT 'LKR' AFTER amount,
+    ADD COLUMN payhere_payment_id VARCHAR(100) DEFAULT NULL,
+    ADD COLUMN subscription_id VARCHAR(100) DEFAULT NULL;
