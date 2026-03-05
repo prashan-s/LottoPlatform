@@ -1,0 +1,134 @@
+
+openapi: 3.0.0
+info:
+  title: Payment Service API
+  description: API for managing lottery payments.
+  version: 1.0.0
+servers:
+  - url: http://localhost:8082/payments/v1
+    description: Local Payment Service
+paths:
+  /payments:
+    post:
+      summary: Initiate a payment
+      description: Initiates a payment for a booking.
+      operationId: initiatePayment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InitiatePaymentRequest'
+      responses:
+        '200':
+          description: Payment initiated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentResponse'
+        '400':
+          description: Invalid request payload.
+        '409':
+          description: Payment already initiated or conflicting request.
+  /payments/{paymentId}/capture:
+    post:
+      summary: Capture an initiated payment
+      description: Captures a payment that has been initiated.
+      operationId: capturePayment
+      parameters:
+        - in: path
+          name: paymentId
+          schema:
+            type: string
+            format: uuid
+          required: true
+          description: Unique identifier of the payment to capture.
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CapturePaymentRequest'
+      responses:
+        '200':
+          description: Payment captured successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentResponse'
+        '400':
+          description: Invalid request or payment not in capturable state.
+        '404':
+          description: Payment not found.
+components:
+  schemas:
+    InitiatePaymentRequest:
+      type: object
+      required:
+        - bookingId
+        - memberId
+        - amount
+        - currency
+        - idempotencyKey
+      properties:
+        bookingId:
+          type: string
+          format: uuid
+          description: Unique identifier for the associated booking.
+        memberId:
+          type: string
+          format: uuid
+          description: Unique identifier for the member making the payment.
+        amount:
+          type: number
+          format: float
+          description: Amount of the payment.
+          minimum: 0.01
+        currency:
+          type: string
+          description: Currency of the payment (e.g., "USD", "LKR").
+        idempotencyKey:
+          type: string
+          format: uuid
+          description: Unique key to ensure idempotency for payment initiation.
+    CapturePaymentRequest:
+      type: object
+      properties:
+        # Additional fields for capture if necessary, e.g., transactionId from payment gateway
+        gatewayTransactionId:
+          type: string
+          description: Transaction ID provided by the external payment gateway.
+    PaymentResponse:
+      type: object
+      properties:
+        paymentId:
+          type: string
+          format: uuid
+          description: Unique identifier for the payment.
+        bookingId:
+          type: string
+          format: uuid
+          description: Associated booking ID.
+        memberId:
+          type: string
+          format: uuid
+          description: Associated member ID.
+        amount:
+          type: number
+          format: float
+          description: Amount of the payment.
+        currency:
+          type: string
+          description: Currency of the payment.
+        status:
+          type: string
+          enum: [INITIATED, AUTHORIZED, CAPTURED, FAILED, REFUNDED]
+          description: Current status of the payment.
+        createdAt:
+          type: string
+          format: date-time
+          description: Timestamp when the payment was initiated.
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp for the payment.
