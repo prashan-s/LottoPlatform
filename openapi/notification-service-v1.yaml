@@ -1,0 +1,76 @@
+
+openapi: 3.0.0
+info:
+  title: Notification Service API
+  description: API for managing and sending notifications.
+  version: 1.0.0
+servers:
+  - url: http://localhost:8084/notifications/v1
+    description: Local Notification Service
+paths:
+  /notifications:
+    post:
+      summary: Send a notification
+      description: Manually trigger a notification to a member.
+      operationId: sendNotification
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendNotificationRequest'
+      responses:
+        '200':
+          description: Notification request received.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationResponse'
+        '400':
+          description: Invalid request payload.
+components:
+  schemas:
+    SendNotificationRequest:
+      type: object
+      required:
+        - memberId
+        - type
+        - message
+      properties:
+        memberId:
+          type: string
+          format: uuid
+          description: Unique identifier for the member to be notified.
+        type:
+          type: string
+          enum: [EMAIL, SMS, PUSH]
+          description: Type of notification to send.
+        message:
+          type: string
+          description: Content of the notification.
+        subject:
+          type: string
+          description: Subject of the notification (e.g., for email).
+    NotificationResponse:
+      type: object
+      properties:
+        notificationId:
+          type: string
+          format: uuid
+          description: Unique identifier for the notification record.
+        memberId:
+          type: string
+          format: uuid
+          description: Member ID the notification is for.
+        type:
+          type: string
+          enum: [EMAIL, SMS, PUSH]
+          description: Type of notification.
+        status:
+          type: string
+          enum: [PENDING, SENT, FAILED, RETRYING]
+          description: Current status of the notification.
+        createdAt:
+          type: string
+          format: date-time
+          description: Timestamp when the notification request was created.
