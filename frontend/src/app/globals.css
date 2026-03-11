@@ -1,0 +1,132 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Surfaces — warm cream (Sri Lanka localized, light mode primary) */
+  --s0: #fdfbf7;
+  --s1: #f8f5ee;
+  --s2: #f0ebe0;
+  --s3: #e8e2d5;
+  --s4: #ddd5c4;
+
+  /* Primary — deep maroon (Sri Lankan lion flag) */
+  --primary: #8b1a2b;
+  --primary-light: #a82040;
+  --primary-dim: rgba(139, 26, 43, 0.08);
+
+  /* Gold — temple gold leaf (prizes only) */
+  --gold: #d4a017;
+  --gold-light: #e5b82a;
+  --gold-dim: rgba(212, 160, 23, 0.12);
+
+  /* Saffron — secondary accent */
+  --saffron: #e87f24;
+  --saffron-dim: rgba(232, 127, 36, 0.1);
+
+  /* Emerald — success / open status */
+  --emerald: #1a6b4a;
+  --emerald-dim: rgba(26, 107, 74, 0.1);
+
+  /* Text — warm near-black on cream */
+  --text: #1c1410;
+  --text-2: #5c4f42;
+  --text-3: #8a7d6f;
+
+  /* Semantic */
+  --success: #1a6b4a;
+  --error: #c53030;
+  --warning: #d97706;
+  --info: #2563eb;
+
+  /* Borders */
+  --border: rgba(139, 26, 43, 0.1);
+  --border-subtle: rgba(92, 79, 66, 0.12);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  color-scheme: light;
+}
+
+body {
+  background-color: var(--s0);
+  color: var(--text);
+  font-family: var(--font-dm-sans), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Ensure content sits above any overlays */
+#__next,
+main {
+  position: relative;
+  z-index: 1;
+}
+
+/* Focus ring — maroon tinted */
+:focus-visible {
+  outline: 2px solid rgba(139, 26, 43, 0.4);
+  outline-offset: 2px;
+}
+
+/* Tabular nums utility */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Warm radial glow animation for success states */
+@keyframes warm-glow {
+  0% { box-shadow: 0 0 0 0 rgba(139, 26, 43, 0); }
+  50% { box-shadow: 0 0 32px 8px rgba(139, 26, 43, 0.12); }
+  100% { box-shadow: 0 0 0 0 rgba(139, 26, 43, 0); }
+}
+
+.animate-warm-glow {
+  animation: warm-glow 1.5s ease-out;
+}
+
+/* Pulse for live badge */
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.animate-pulse-dot {
+  animation: pulse-dot 2s infinite;
+}
+
+/* Smooth card lift */
+.card-lift {
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.card-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(28, 20, 16, 0.08);
+}
+
+/* Skeleton loading shimmer */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, var(--s3) 25%, var(--s4) 50%, var(--s3) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* Kandyan-inspired decorative divider */
+.kandyan-divider {
+  height: 2px;
+  max-width: 200px;
+  margin: 0 auto;
+  background: linear-gradient(90deg, transparent, #8b1a2b, #d4a017, #8b1a2b, transparent);
+  border-radius: 1px;
+}
