@@ -5,6 +5,7 @@ const swaggerUi = require('swagger-ui-express');
 const { Sequelize, Op } = require('sequelize');
 const { Umzug, SequelizeStorage } = require('umzug');
 const { startConsumer, Notification } = require('./consumer');
+const { toResponse } = require('./utils/notificationMapper');
 
 const app = express();
 app.use(express.json());
@@ -135,14 +136,6 @@ async function runMigrations() {
     console.error('Unable to connect to the database or run migrations:', error);
     process.exit(1);
   }
-}
-
-// Normalize a Notification Sequelize row to the API response shape.
-// Converts the TINYINT read field to a proper boolean.
-function toResponse(n) {
-  const obj = n.toJSON();
-  obj.read = Boolean(obj.read);
-  return obj;
 }
 
 app.get('/', (req, res) => {
