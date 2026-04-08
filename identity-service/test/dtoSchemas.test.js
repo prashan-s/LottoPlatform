@@ -29,6 +29,18 @@ test('createMemberSchema accepts valid GOLD membership payload', () => {
   assert.equal(value.membershipTier, 'GOLD');
 });
 
+test('createMemberSchema accepts valid SILVER membership payload', () => {
+  const { error, value } = createMemberSchema.validate({
+    membershipTier: 'SILVER',
+    firstName: 'Katherine',
+    lastName: 'Johnson',
+    email: 'katherine@example.com',
+  });
+
+  assert.equal(error, undefined);
+  assert.equal(value.membershipTier, 'SILVER');
+});
+
 test('createMemberSchema rejects unsupported membership tier', () => {
   const { error } = createMemberSchema.validate({
     membershipTier: 'PLATINUM',
@@ -50,6 +62,24 @@ test('createMemberSchema rejects invalid email', () => {
   assert.ok(error);
 });
 
+test('createMemberSchema requires firstName', () => {
+  const { error } = createMemberSchema.validate({
+    lastName: 'Lovelace',
+    email: 'ada@example.com',
+  });
+
+  assert.ok(error);
+});
+
+test('createMemberSchema requires lastName', () => {
+  const { error } = createMemberSchema.validate({
+    firstName: 'Ada',
+    email: 'ada@example.com',
+  });
+
+  assert.ok(error);
+});
+
 test('updateProfileSchema requires at least one field', () => {
   const { error } = updateProfileSchema.validate({});
   assert.ok(error);
@@ -62,4 +92,13 @@ test('updateProfileSchema accepts a partial profile update', () => {
 
   assert.equal(error, undefined);
   assert.equal(value.phoneNumber, '+94-71-555-0101');
+});
+
+test('updateProfileSchema rejects email longer than 255 chars', () => {
+  const longLocal = 'a'.repeat(246);
+  const { error } = updateProfileSchema.validate({
+    email: `${longLocal}@example.com`,
+  });
+
+  assert.ok(error);
 });

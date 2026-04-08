@@ -136,4 +136,38 @@ class DrawServiceTest {
         assertThat(slot1.getStatus()).isEqualTo(SlotStatus.DRAWN);
         assertThat(slot2.getStatus()).isEqualTo(SlotStatus.DRAWN);
     }
+
+    @Test
+    void executeDraw_whenLotteryMissing_throwsException() {
+        when(lotteryRepository.findById("lottery-1")).thenReturn(Optional.empty());
+
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalStateException.class,
+                () -> drawService.executeDraw(openLottery));
+
+        verifyNoInteractions(slotRepository, bookingRepository, outboxService);
+    }
+
+    @Test
+    void executeDraw_ignoresConfirmedBookingsFromOtherLotteries() {
+        Slot otherSlot = new Slot();
+        otherSlot.setSlotId("slot-other");
+
+        Booking booking = new Booking();
+        booking.setBookingId("booking-9");
+        booking.setMemberId("member-9");
+        booking.setStatus(BookingStatus.CONFIRMED);
+        booking.setSlot(otherSlot);
+
+        when(lotteryRepository.findById("lottery-1")).thenReturn(Optional.of(openLottery));
+        when(slotRepository.findByLotteryId("lottery-1")).thenReturn(List.of(slot1, slot2));
+        when(bookingRepository.findAll()).thenReturn(List.of(booking));
+
+        boolean hadWinner = drawService.executeDraw(openLottery);
+
+        assertThat(hadWinner).isFalse();
+        assertThat(openLottery.getWinnerId()).isNull();
+        assertThat(openLottery.getWinnerBookingId()).isNull();
+        verify(outboxService).saveDrawEvent(eq("lottery-1"), eq("Test Draw"), isNull(), isNull());
+    }
+
 }
