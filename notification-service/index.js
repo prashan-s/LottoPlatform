@@ -223,13 +223,27 @@ app.patch('/notifications/:notificationId/read', async (req, res) => {
   }
 });
 
+async function startConsumerWithRetry(maxRetries = 10, delayMs = 5000) {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      await startConsumer();
+      return;
+    } catch (error) {
+      console.error(`Failed to start Kafka consumer (attempt ${attempt}/${maxRetries}):`, error.message);
+      if (attempt === maxRetries) {
+        console.error('Max retries reached. Exiting.');
+        process.exit(1);
+      }
+      console.log(`Retrying in ${delayMs / 1000}s...`);
+      await new Promise(resolve => setTimeout(resolve, delayMs));
+    }
+  }
+}
+
 runMigrations().then(() => {
   app.listen(port, () => {
     console.log(`Notification service listening at http://localhost:${port}`);
   });
 
-  startConsumer().catch(error => {
-    console.error('Failed to start Kafka consumer:', error);
-    process.exit(1);
-  });
+  startConsumerWithRetry();
 });
