@@ -4,6 +4,7 @@ import "./globals.css";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import Providers from "@/components/layout/Providers";
+import ChunkErrorRecovery from "@/components/layout/ChunkErrorRecovery";
 
 const fraunces = Fraunces({
   subsets: ["latin"],
@@ -46,6 +47,7 @@ export default function RootLayout({
     >
       <body className="flex flex-col min-h-screen">
         <Providers>
+          <ChunkErrorRecovery />
           <Header />
           <main className="flex-1 relative z-[1]">{children}</main>
           <Footer />
