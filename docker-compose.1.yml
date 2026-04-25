@@ -4,8 +4,8 @@ services:
     hostname: kafka
     container_name: kafka
     ports:
-      - "9092:9092"
-      - "9093:9093"
+      - "0.0.0.0:9092:9092"
+      - "0.0.0.0:9093:9093"
     environment:
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: broker,controller
@@ -29,7 +29,7 @@ services:
     hostname: kafka-ui
     container_name: kafka-ui
     ports:
-      - "8090:8080"
+      - "0.0.0.0:8090:8080"
     environment:
       KAFKA_CLUSTERS_0_NAME: local-kafka
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
@@ -165,7 +165,7 @@ services:
     hostname: payment-service
     container_name: payment-service
     ports:
-      - "8082:8082"
+      - "0.0.0.0:8082:8082"
     environment:
       DB_HOST: payment-db
       DB_PORT: "3306"
@@ -194,7 +194,7 @@ services:
     hostname: identity-service
     container_name: identity-service
     ports:
-      - "8081:8081"
+      - "0.0.0.0:8081:8081"
     environment:
       DB_HOST: identity-db
       DB_PORT: "3306"
@@ -212,7 +212,7 @@ services:
     hostname: notification-service
     container_name: notification-service
     ports:
-      - "8083:8083"
+      - "0.0.0.0:8083:8083"
     environment:
       DB_HOST: notification-db
       DB_PORT: "3306"
@@ -233,7 +233,7 @@ services:
     hostname: booking-service
     container_name: booking-service
     ports:
-      - "8084:8084"
+      - "0.0.0.0:8084:8084"
     environment:
       DB_USER: booking_user
       DB_PASSWORD: booking_password
@@ -250,7 +250,7 @@ services:
     hostname: gateway
     container_name: gateway
     ports:
-      - "8080:8080"
+      - "0.0.0.0:8080:8080"
     depends_on:
       - booking-service
       - payment-service
@@ -260,13 +260,14 @@ services:
       - app-network
 
   frontend:
-    image: prashansamarathunge/frontend:latest
+    build:
+      context: ./frontend
+      args:
+        GATEWAY_URL: http://217.142.187.137:8080
     hostname: frontend
     container_name: frontend
     ports:
-      - "3000:3000"
-    environment:
-      GATEWAY_URL: http://gateway:8080
+      - "0.0.0.0:3000:3000"
     depends_on:
       - gateway
     networks:
