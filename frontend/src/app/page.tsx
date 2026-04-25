@@ -81,7 +81,7 @@ export default function HomePage() {
           </div>
 
           <h1 className="font-fraunces font-light text-text-primary leading-[1.05] mb-6 text-[clamp(40px,7vw,72px)]">
-            Your fortune
+            Your Test
             <br />
             <em className="italic text-primary">starts here.</em>
           </h1>

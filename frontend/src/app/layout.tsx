@@ -30,7 +30,7 @@ const dmMono = DM_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "LottoPlatform — Your fortune starts here",
+  title: "LottoPlatform — Your test starts here",
   description:
     "Sri Lanka's premier lottery platform. Book a slot, pay in seconds, and get notified instantly.",
 };

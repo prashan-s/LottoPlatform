@@ -80,8 +80,6 @@ services:
     image: mysql:8.0
     hostname: payment-db
     container_name: payment-db
-    ports:
-      - "0.0.0.0:3306:3306"
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
       MYSQL_DATABASE: payment_service_db
@@ -206,6 +204,20 @@ services:
     depends_on:
       identity-db:
         condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "const
+            http=require('http');http.get('http://localhost:8081/',(r)=>process\
+            .exit(r.statusCode<500?0:1)).on('error',()=>process.exit(1));",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 8
+      start_period: 20s
     networks:
       - app-network
 
@@ -254,10 +266,14 @@ services:
     ports:
       - "0.0.0.0:8080:8080"
     depends_on:
-      - booking-service
-      - payment-service
-      - identity-service
-      - notification-service
+      booking-service:
+        condition: service_started
+      payment-service:
+        condition: service_started
+      identity-service:
+        condition: service_healthy
+      notification-service:
+        condition: service_started
     networks:
       - app-network
 
@@ -268,7 +284,7 @@ services:
     ports:
       - "0.0.0.0:3000:3000"
     environment:
-      GATEWAY_URL: http://gateway:8080
+      GATEWAY_URL: http://localhost:8080
     depends_on:
       - gateway
     networks:
