@@ -144,7 +144,7 @@ jobs:
       packages: write
     strategy:
       matrix:
-        service: [booking-service, payment-service, identity-service, notification-service]
+        service: [booking-service, payment-service, identity-service, notification-service, gateway, frontend]
     steps:
       - uses: actions/checkout@v4
 
@@ -195,6 +195,6 @@ jobs:
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           script: |
             cd ~/lottery-platform
-            docker-compose pull
-            docker-compose up -d
-            docker-compose ps
+            docker compose pull
+            docker compose up -d
+            docker compose ps
