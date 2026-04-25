@@ -180,8 +180,9 @@ services:
       PAYHERE_MERCHANT_SECRET: "NDEzMjI0OTEyNTI1OTM0OTAyMjkxMjM3OTUyMjYzNjIyMDU2MjQ0"
       PAYHERE_SANDBOX: "true"
       # Set to your public gateway URL for PayHere notify callbacks.
-      # Run `ngrok http 8080` and copy your HTTPS forwarding URL here
-      PAYHERE_NOTIFY_URL: "https://YOUR-NGROK-ID.ngrok-free.app/payments/payhere/notify"
+      # For local sandbox testing: run `ngrok http 8080` and set to:
+      #   https://<ngrok-id>.ngrok.io/payments/payhere/notify
+      PAYHERE_NOTIFY_URL: "https://1dc7-203-94-92-134.ngrok-free.app/payments/payhere/notify"
     depends_on:
       payment-db:
         condition: service_healthy
